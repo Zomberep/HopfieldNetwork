@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include <fstream>
 #include <cstring>
 
 class Image {
@@ -18,6 +19,8 @@ class Image {
         this->is_data = false;
     };
 public:
+    static Image* receive(std::string path, size_t len, size_t n = 0, size_t m = 0);
+
     Image(size_t l = 0, u_int8_t* data = nullptr, size_t n = 0, size_t m = 0);
     Image& operator = (const Image& other);
     ~Image() {
@@ -27,7 +30,7 @@ public:
     template <typename Type>
     Image(Type* array, size_t l, size_t n = 0, size_t m = 0);
     
-    void show_data();
+    void show_data() const;
     void set_size(size_t n, size_t m);
     inline size_t get_m() const {return m;};
     inline size_t get_n() const {return n;};
@@ -67,7 +70,7 @@ Image::Image(Type* array, size_t l, size_t n, size_t m) {
     this->n = n;
     this->m = m;
     this->allocate_memory(l);
-    std::fill(this->data, this->data + l, 255);
+    std::fill(this->data, this->data + (l / (8 * sizeof(u_int8_t))) + ((l % (8 * sizeof(u_int8_t))) != 0), 255);
 
     u_int8_t bit_mask = 0b10000000;
     size_t byte_index = 0;

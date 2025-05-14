@@ -1,6 +1,6 @@
 #include "image.h"
 
-void Image::show_data() {
+void Image::show_data() const {
     if (!is_data) {
         throw std::invalid_argument("Your image is empty");
     }
@@ -28,7 +28,7 @@ void Image::show_data() {
 };
 
 size_t Image::allocate_memory(size_t l) {
-    size_t req_len = (l / sizeof(u_int8_t)) + ((l % sizeof(u_int8_t)) != 0);
+    size_t req_len = (l / (8 * sizeof(u_int8_t))) + ((l % (8 * sizeof(u_int8_t))) != 0);
     try {
         this->data = new u_int8_t[req_len]{0};
     }
@@ -113,3 +113,24 @@ Image& Image::operator = (const Image& other) {
 
     return *this;
 };
+
+Image* Image::receive(std::string path, size_t len, size_t n, size_t m) {
+    std::ifstream file{path, std::ios::in | std::ios::binary};
+    if (!file.is_open())
+        throw std::runtime_error("Cannot open file for reading!");
+
+    size_t i{0}, req_len{(len / (8 * sizeof(u_int8_t))) + (len % (8 * sizeof(u_int8_t)) != 0)}; 
+    u_int8_t* data = new u_int8_t[req_len]{0};
+    char curr_byte{0};
+
+    while (file.get(curr_byte)) {
+        data[i++] = curr_byte;
+    }
+
+    Image* im = new Image{len, data, n, m};
+
+    file.close();
+    delete[] data;
+
+    return im;
+}

@@ -474,7 +474,7 @@ Matrix &Matrix::operator *=(const double &num){
 };
 
 double Matrix::operator()(size_t rows, size_t cols) const{
-    if(rows >= rows_ || cols >= cols_ || cols < 0 || rows < 0){
+    if(rows >= rows_ || cols >= cols_){
         throw std::out_of_range("Index or indexes are out of range");
     }
     return matrix_[rows][cols];
@@ -490,7 +490,7 @@ void Matrix::zero_main_diag(){
 };
 
 const double* Matrix::get_row(size_t r) const {
-    return (r >= 0 && r < rows_) ? matrix_[r] : nullptr;
+    return (r < rows_) ? matrix_[r] : nullptr;
 };
 
 Matrix &Matrix::operator = (Matrix &&other) noexcept{

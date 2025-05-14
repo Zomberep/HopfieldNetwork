@@ -21,7 +21,7 @@ HopfieldNetwork::HopfieldNetwork(size_t dim, size_t len, Image* images) {
         throw std::invalid_argument("Images array is nullptr");
     }
     if (len > 0.14 * dim) {
-        std::cout << "WARNING: Capacity exceeded (len > 0.14 * dim)" << std::endl;
+        std::cout << "WARNING: Capacity exceeded (len > 0.14 * dim)\n" << std::endl;
     }
 
     this->dim = dim;
@@ -57,9 +57,16 @@ void HopfieldNetwork::train() {
         curr_image_T->set_matrix(dim, 1, curr_data);
         *links += *curr_image_T * *curr_image;
     }
-    
+
     links->zero_main_diag();
     *links *= (1.0 / dim);
+    
+    for (size_t i = 0; i < dim; ++i) {
+        for (size_t j = 0; j < dim; ++j) {
+            std::cout << (*links)(i, j) << ' ';
+        }
+        std::cout << std::endl;
+    }
 
     if (curr_image)
         delete curr_image;
@@ -91,7 +98,7 @@ Image* HopfieldNetwork::recognize(const Image& im) {
             for(size_t j = 0; j < dim; ++j)
                 influence += curr_row[j] * neurons[j];
 
-            neurons[i] = this->sign<double>(influence);
+            neurons[permutation[i]] = this->sign<double>(influence);
         }
 
         delete[] permutation;
@@ -104,8 +111,9 @@ Image* HopfieldNetwork::recognize(const Image& im) {
     }
 
     for (size_t i = 0; i < dim; ++i) {
-        neurons[i] = (int8_t)(neurons[i] > 0);
+        neurons[i] = (neurons[i] > 0) ? 1 : 0;
     }
+
     Image* recognized_image = new Image{neurons, dim, im.get_n(), im.get_m()};
 
     if (neurons)
@@ -124,7 +132,7 @@ void HopfieldNetwork::save(std::string path) {
     size_t dims[4]{this->len, images[0].get_length(), images[0].get_n(), images[0].get_m()};
     file.write((char*)dims, sizeof(size_t) * 4); // len, dim, n, m
 
-    size_t byte_len = (dims[1] / sizeof(u_int8_t)) + (dims[1] % sizeof(u_int8_t) != 0);
+    size_t byte_len = (dims[1] / (8 * sizeof(u_int8_t))) + (dims[1] % (8 * sizeof(u_int8_t)) != 0);
     for (size_t i = 0; i < dims[0]; ++i) {
         file.write((char *)images[i].get_bin_data(), byte_len);
     }
@@ -145,7 +153,7 @@ HopfieldNetwork* HopfieldNetwork::receive(std::string path) {
     size_t dims[4];
     file.read((char *)dims, sizeof(size_t) * 4);
 
-    size_t byte_len = (dims[1] / sizeof(u_int8_t)) + (dims[1] % sizeof(u_int8_t) != 0);
+    size_t byte_len = (dims[1] / (8 * sizeof(u_int8_t))) + (dims[1] % (8 * sizeof(u_int8_t)) != 0);
     u_int8_t* data{new u_int8_t[byte_len]};
     Image* images{new Image[dims[0]]};
 
@@ -167,6 +175,7 @@ HopfieldNetwork* HopfieldNetwork::receive(std::string path) {
     delete[] data;
     delete[] images;
     delete[] matrix_data;
+    delete matrix;
     file.close();
 
     return network;
