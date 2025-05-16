@@ -119,11 +119,11 @@ Image* Image::receive(std::string path, size_t len, size_t n, size_t m) {
     if (!file.is_open())
         throw std::runtime_error("Cannot open file for reading!");
 
-    size_t i{0}, req_len{(len / (8 * sizeof(u_int8_t))) + (len % (8 * sizeof(u_int8_t)) != 0)}; 
+    size_t i{0}, req_len{(len / (8 * sizeof(u_int8_t))) + (len % (8 * sizeof(u_int8_t)) != 0)};
     u_int8_t* data = new u_int8_t[req_len]{0};
     char curr_byte{0};
 
-    while (file.get(curr_byte)) {
+    while (file.get(curr_byte) && i < req_len) {
         data[i++] = curr_byte;
     }
 

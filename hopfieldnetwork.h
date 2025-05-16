@@ -15,9 +15,13 @@ class HopfieldNetwork {
     size_t dim{0}, len{0};
 
     template<typename Type>
-    inline int8_t sign(Type arg) {return (arg >= 0) - (arg < 0);};
-    inline void set_links(Matrix& matrix) {*links = matrix;};
+    inline int sign(Type arg) {return (arg >= 0) - (arg < 0);};
+    inline void set_links(Matrix& matrix) {links = new Matrix{}; *links = matrix;};
     size_t* get_random_permutation();
+    
+    HopfieldNetwork() = default;
+    inline void set_dim(size_t dim) {this->dim = dim;};
+    inline void set_len(size_t len) {this->len = len;}; 
 public:
     static HopfieldNetwork* receive(std::string path);
 
@@ -26,6 +30,7 @@ public:
     inline size_t get_len() const {return len;};
     inline const Image* get_images() const {return images;};
     inline const Matrix* get_links() const {return links;};
+    inline double calculate_E(int8_t* neurons) const;
     void train();
     void save(std::string path);
     Image* recognize(const Image& im);

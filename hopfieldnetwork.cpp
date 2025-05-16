@@ -60,13 +60,6 @@ void HopfieldNetwork::train() {
 
     links->zero_main_diag();
     *links *= (1.0 / dim);
-    
-    for (size_t i = 0; i < dim; ++i) {
-        for (size_t j = 0; j < dim; ++j) {
-            std::cout << (*links)(i, j) << ' ';
-        }
-        std::cout << std::endl;
-    }
 
     if (curr_image)
         delete curr_image;
@@ -84,9 +77,9 @@ Image* HopfieldNetwork::recognize(const Image& im) {
         throw std::invalid_argument("Dimension of the image should be the same with 'dim' parameter");
     }
 
-    int8_t* neurons = new int8_t[dim], *prev_neurons = new int8_t[dim];
-    im.get_data<int8_t>(neurons);
-    memcpy(prev_neurons, neurons, sizeof(int8_t) * dim);
+    short* neurons = new short[dim], *prev_neurons = new short[dim];
+    im.get_data<short>(neurons);
+    memcpy(prev_neurons, neurons, sizeof(short) * dim);
 
     while (true) {
         size_t* permutation = this->get_random_permutation();
@@ -103,10 +96,10 @@ Image* HopfieldNetwork::recognize(const Image& im) {
 
         delete[] permutation;
 
-        if (!memcmp(neurons, prev_neurons, sizeof(int8_t) * dim)) {
+        if (!memcmp(neurons, prev_neurons, sizeof(short) * dim)) {
             break;
         } else {
-            memcpy(prev_neurons, neurons, sizeof(int8_t) * dim);
+            memcpy(prev_neurons, neurons, sizeof(short) * dim);
         }
     }
 
@@ -129,20 +122,25 @@ void HopfieldNetwork::save(std::string path) {
     if (!file.is_open())
         throw std::runtime_error("Cannot open file for writing!");
 
-    size_t dims[4]{this->len, images[0].get_length(), images[0].get_n(), images[0].get_m()};
-    file.write((char*)dims, sizeof(size_t) * 4); // len, dim, n, m
-
-    size_t byte_len = (dims[1] / (8 * sizeof(u_int8_t))) + (dims[1] % (8 * sizeof(u_int8_t)) != 0);
-    for (size_t i = 0; i < dims[0]; ++i) {
-        file.write((char *)images[i].get_bin_data(), byte_len);
-    }
+    file.write((char *)(&(this->dim)), sizeof(size_t));
 
     double** matrix = links->get_matrix();
-    for (size_t i = 0; i < dims[1]; ++i) {
-        file.write((char*)matrix[i], sizeof(double) * dims[1]);
+    for (size_t i = 0; i < this->dim; ++i) {
+        file.write((char*)matrix[i], sizeof(double) * this->dim);
     }
 
     file.close();    
+}
+
+inline double HopfieldNetwork::calculate_E(int8_t* neurons) const {
+    double E = 0;
+    for (size_t i = 0; i < dim; ++i) {
+        for (size_t j = 0; j < dim; ++j) {
+            E += (*links)(i, j) * neurons[i] * neurons[j];
+        }
+    }
+
+    return -0.5 * E;
 }
 
 HopfieldNetwork* HopfieldNetwork::receive(std::string path) {
@@ -150,30 +148,19 @@ HopfieldNetwork* HopfieldNetwork::receive(std::string path) {
     if (!file.is_open())
         throw std::runtime_error("Cannot open file for reading!");
     
-    size_t dims[4];
-    file.read((char *)dims, sizeof(size_t) * 4);
+    size_t dim{0};
+    file.read((char *)(&dim), sizeof(size_t));
 
-    size_t byte_len = (dims[1] / (8 * sizeof(u_int8_t))) + (dims[1] % (8 * sizeof(u_int8_t)) != 0);
-    u_int8_t* data{new u_int8_t[byte_len]};
-    Image* images{new Image[dims[0]]};
-
-    for (size_t i = 0; i < dims[0]; ++i) {
-        file.read((char *)data, byte_len * sizeof(u_int8_t));
-        images[i] = Image(dims[1], data, dims[2], dims[3]);
-    }
-
-    double* matrix_data{new double[dims[1] * dims[1]]};
+    double* matrix_data{new double[dim * dim]};
     Matrix* matrix = new Matrix{};
 
-    file.read((char*)matrix_data, sizeof(double) * dims[1] * dims[1]);
-    matrix->set_matrix(dims[1], dims[1], matrix_data);
-
-    HopfieldNetwork* network = new HopfieldNetwork{dims[1], dims[0], images};
-    network->set_links(*matrix);
-    file.read((char *)dims, sizeof(size_t) * 4);
+    file.read((char*)matrix_data, sizeof(double) * dim * dim);
+    matrix->set_matrix(dim, dim, matrix_data);
     
-    delete[] data;
-    delete[] images;
+    HopfieldNetwork* network = new HopfieldNetwork{};
+    network->set_links(*matrix);
+    network->set_dim(dim);
+    
     delete[] matrix_data;
     delete matrix;
     file.close();

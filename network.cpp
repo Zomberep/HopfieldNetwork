@@ -1,5 +1,13 @@
 #include "hopfieldnetwork.h"
 
+enum learning_params {
+    letter_amount=6,
+    dim=64,
+    req_len=(dim / (8 * sizeof(u_int8_t)) + (dim % (8 * sizeof(u_int8_t)) != 0)),
+    n=8,
+    m=8,
+};
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         throw std::runtime_error("Incorrect number of arguments!");
@@ -10,7 +18,7 @@ int main(int argc, char** argv) {
     HopfieldNetwork* network = HopfieldNetwork::receive("./BinaryFiles/trained_network.bin");
     std::cout << "Input data: " << std::endl;
     std::cout << "-----------------------------------";
-    Image* im = Image::receive(path, 10, 2, 5); //
+    Image* im = Image::receive(path, dim, n, m); //
     im->show_data();
     std::cout << "-----------------------------------" << std::endl;
 
