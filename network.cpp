@@ -9,25 +9,33 @@ enum learning_params {
 };
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        throw std::runtime_error("Incorrect number of arguments!");
+    HopfieldNetwork* network{nullptr};
+    Image* im{nullptr}, *rec_im{nullptr};
+    try {
+        if (argc < 2) {
+            throw std::runtime_error("Incorrect number of arguments!");
+        }
+
+        std::string path{argv[1]};
+
+        network = HopfieldNetwork::receive("./BinaryFiles/trained_network.bin");
+        std::cout << "Input data: " << std::endl;
+        std::cout << "-----------------------------------";
+        im = Image::receive(path, dim, n, m);
+        im->show_data();
+        std::cout << "-----------------------------------" << std::endl;
+
+        std::cout << "Recognized data: " << std::endl;
+        std::cout << "-----------------------------------";
+        rec_im = network->recognize(*im);
+        rec_im->show_data();
+        std::cout << "-----------------------------------" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "Unknown exception!" << std::endl;
     }
-
-    std::string path{argv[1]};
-
-    HopfieldNetwork* network = HopfieldNetwork::receive("./BinaryFiles/trained_network.bin");
-    std::cout << "Input data: " << std::endl;
-    std::cout << "-----------------------------------";
-    Image* im = Image::receive(path, dim, n, m); //
-    im->show_data();
-    std::cout << "-----------------------------------" << std::endl;
-
-    std::cout << "Recognized data: " << std::endl;
-    std::cout << "-----------------------------------";
-    Image* rec_im = network->recognize(*im);
-    rec_im->show_data();
-    std::cout << "-----------------------------------" << std::endl;
-
+    
     if (network)
         delete network;
     if (im)
