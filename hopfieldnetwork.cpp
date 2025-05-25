@@ -29,9 +29,9 @@ HopfieldNetwork::HopfieldNetwork(size_t dim, size_t len, Image* images) {
 
     for (size_t i = 0; i < len; ++i) {
         if (images[i].get_length() != dim)
-            throw std::invalid_argument("Image " + std::to_string(i) + " is empty");
+            throw std::invalid_argument("Image " + std::to_string(i) + " has wrong dimension");
         if (!images[i].get_is_data())
-        throw std::invalid_argument("Image " + std::to_string(i) + " has wrong dimension");
+            throw std::invalid_argument("Image " + std::to_string(i) + " is empty");
     }
 
     try {
@@ -130,17 +130,6 @@ void HopfieldNetwork::save(std::string path) {
     }
 
     file.close();    
-}
-
-inline double HopfieldNetwork::calculate_E(int8_t* neurons) const {
-    double E = 0;
-    for (size_t i = 0; i < dim; ++i) {
-        for (size_t j = 0; j < dim; ++j) {
-            E += (*links)(i, j) * neurons[i] * neurons[j];
-        }
-    }
-
-    return -0.5 * E;
 }
 
 HopfieldNetwork* HopfieldNetwork::receive(std::string path) {
