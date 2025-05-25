@@ -30,7 +30,6 @@ public:
     inline size_t get_len() const {return len;};
     inline const Image* get_images() const {return images;};
     inline const Matrix* get_links() const {return links;};
-    inline double calculate_E(int8_t* neurons) const;
     void train();
     void save(std::string path);
     Image* recognize(const Image& im);
